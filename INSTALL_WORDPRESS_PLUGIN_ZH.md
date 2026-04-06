@@ -93,3 +93,22 @@ one-click-simple-shop/
 - 從哪個按鈕開始點
 - 每一步按什麼
 - 第一次上架商品的完整順序
+
+## 10) 商用上線前必做（v2.0）
+
+1. 後台 **Products → Shop Settings** 設定：
+   - Currency（幣別）
+   - Shipping Fee（運費）
+   - Tax Rate（稅率）
+   - Bank Transfer Info（匯款資訊）
+2. 每個商品都要設定：
+   - Price（售價）
+   - Stock Qty（庫存）
+3. 測試完整流程：
+   - 建立測試訂單
+   - 確認後台 `Orders` 有資料
+   - 確認管理員與客戶都收到 Email
+4. 正式上線建議：
+   - 安裝 SMTP 外掛（提高寄信成功率）
+   - 開啟 SSL（https）
+   - 每日備份資料庫
