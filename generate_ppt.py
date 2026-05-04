@@ -618,6 +618,221 @@ add_textbox(s, 0, prs.slide_height - Inches(0.5),
             size=10, color=LIGHT_BLUE, align=PP_ALIGN.CENTER)
 
 
+# ------------- Slide 11: Single-page recreation of the source image -----
+s = prs.slides.add_slide(blank)
+slide_background(s, WHITE)
+
+# Top + bottom navy bars (matches the source slide framing)
+add_rect(s, 0, 0, prs.slide_width, Inches(0.18), fill=NAVY)
+add_rect(s, 0, prs.slide_height - Inches(0.18),
+         prs.slide_width, Inches(0.18), fill=NAVY)
+
+# Title block (with thin underline like the source)
+add_textbox(s, Inches(0.4), Inches(0.3),
+            Inches(8.0), Inches(0.6),
+            "Functional Team Collaboration",
+            size=30, bold=True, color=NAVY)
+add_rect(s, Inches(0.4), Inches(0.92), Inches(7.5), Emu(15000), fill=NAVY)
+add_textbox(s, Inches(0.4), Inches(0.95),
+            Inches(8.0), Inches(0.4),
+            "One Goal – Delivering Excellence for TSMC",
+            size=14, color=DARK_TEXT)
+
+# ----- Center diagram geometry -----
+cx = prs.slide_width / 2
+cy = Inches(4.0)
+R_outer = Inches(2.05)
+R_inner = Inches(0.95)
+
+# Outer light blue ring
+ring = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                          int(cx - R_outer), int(cy - R_outer),
+                          int(R_outer * 2), int(R_outer * 2))
+ring.fill.solid(); ring.fill.fore_color.rgb = LIGHT_BLUE
+ring.line.color.rgb = WHITE; ring.line.width = Pt(2)
+ring.shadow.inherit = False
+
+# Pie-style ring segments (approximated with PIE shapes for a 3-tone ring)
+# Three quadrant blocks of color across the ring (deep / mid / sky)
+for start, end, color in [(-90, 30, DEEP_BLUE),
+                          (30, 150, SKY_BLUE),
+                          (150, 270, MID_BLUE)]:
+    pie = s.shapes.add_shape(MSO_SHAPE.PIE,
+                             int(cx - R_outer), int(cy - R_outer),
+                             int(R_outer * 2), int(R_outer * 2))
+    pie.fill.solid(); pie.fill.fore_color.rgb = color
+    pie.line.fill.background(); pie.shadow.inherit = False
+    # set adj1/adj2 angles via XML (PIE adj values are in 60000ths of a degree,
+    # measured clockwise from 3 o'clock; python-pptx exposes adjustments)
+    pie.adjustments[0] = start
+    pie.adjustments[1] = end
+
+# White inner disc to make the colored ring hollow
+hole = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                          int(cx - R_inner - Inches(0.15)),
+                          int(cy - R_inner - Inches(0.15)),
+                          int((R_inner + Inches(0.15)) * 2),
+                          int((R_inner + Inches(0.15)) * 2))
+hole.fill.solid(); hole.fill.fore_color.rgb = WHITE
+hole.line.fill.background(); hole.shadow.inherit = False
+
+# Center core (TSMC)
+core = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                          int(cx - R_inner), int(cy - R_inner),
+                          int(R_inner * 2), int(R_inner * 2))
+core.fill.solid(); core.fill.fore_color.rgb = WHITE
+core.line.color.rgb = DEEP_BLUE; core.line.width = Pt(2)
+core.shadow.inherit = False
+tf = core.text_frame
+tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+tf.margin_top = tf.margin_bottom = Inches(0.05)
+p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+r = p.add_run(); r.text = "tsmc"
+r.font.size = Pt(14); r.font.bold = True; r.font.color.rgb = ACCENT_RED
+p2 = tf.add_paragraph(); p2.alignment = PP_ALIGN.CENTER
+r2 = p2.add_run(); r2.text = "TSMC"
+r2.font.size = Pt(16); r2.font.bold = True; r2.font.color.rgb = NAVY
+p3 = tf.add_paragraph(); p3.alignment = PP_ALIGN.CENTER
+r3 = p3.add_run(); r3.text = "Project"
+r3.font.size = Pt(11); r3.font.color.rgb = NAVY
+p4 = tf.add_paragraph(); p4.alignment = PP_ALIGN.CENTER
+r4 = p4.add_run(); r4.text = "Core Team"
+r4.font.size = Pt(11); r4.font.bold = True; r4.font.color.rgb = NAVY
+
+# Seven team labels around the ring (matches the source ordering)
+# Angles measured from 12 o'clock, clockwise
+team_specs = [
+    ( -55, "APAC R&D\nService Team",   DEEP_BLUE),
+    (  -5, "Technical\nSupport Team",  SKY_BLUE),
+    (  55, "Customer\nService\nTeam",  SKY_BLUE),
+    ( 110, "Sales\nTeam",              MID_BLUE),
+    ( 175, "SCM Team",                 MID_BLUE),
+    (-125, "Factory\nUnit Team",       MID_BLUE),
+    (-175, "Project\nManagement\nTeam",DEEP_BLUE),
+]
+label_r = Inches(2.55)
+for deg, text, color in team_specs:
+    rad = math.radians(deg - 90)  # convert to math angle
+    lx = cx + label_r * math.cos(rad)
+    ly = cy + label_r * math.sin(rad)
+    box_w = Inches(1.4); box_h = Inches(0.7)
+    tb = s.shapes.add_textbox(int(lx - box_w / 2),
+                              int(ly - box_h / 2),
+                              box_w, box_h)
+    tf = tb.text_frame; tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    for j, line in enumerate(text.split("\n")):
+        p = tf.paragraphs[0] if j == 0 else tf.add_paragraph()
+        p.alignment = PP_ALIGN.CENTER
+        rr = p.add_run(); rr.text = line
+        rr.font.size = Pt(10); rr.font.bold = True
+        rr.font.color.rgb = color
+
+# Top "CORE SUPPORT" pill + tagline
+add_pill(s, int(cx - Inches(1.1)), Inches(1.5),
+         Inches(2.2), Inches(0.4),
+         "CORE SUPPORT", fill=NAVY, size=12)
+add_textbox(s, int(cx - Inches(1.5)), Inches(1.92),
+            Inches(3.0), Inches(0.3),
+            "Enable & Support", size=11, bold=True,
+            color=DARK_TEXT, align=PP_ALIGN.CENTER)
+
+# Left "EXECUTION" pill + tagline + connector
+add_pill(s, Inches(0.3), Inches(3.7),
+         Inches(1.7), Inches(0.45),
+         "EXECUTION", fill=NAVY, size=12)
+add_textbox(s, Inches(0.2), Inches(4.18),
+            Inches(1.9), Inches(0.65),
+            "Plan & Manage\nDeliver & Execute",
+            size=10, color=GREY_TEXT, align=PP_ALIGN.CENTER)
+# dotted connector to ring (approximated as a thin rectangle)
+add_rect(s, Inches(2.0), Inches(3.92),
+         int(cx - R_outer - Inches(2.0)), Emu(9000),
+         fill=DEEP_BLUE)
+# small dot at ring edge
+dot1 = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                          int(cx - R_outer - Inches(0.07)),
+                          Inches(3.86),
+                          Inches(0.14), Inches(0.14))
+dot1.fill.solid(); dot1.fill.fore_color.rgb = DEEP_BLUE
+dot1.line.fill.background(); dot1.shadow.inherit = False
+
+# Right "BUSINESS" pill + tagline + connector
+add_pill(s, prs.slide_width - Inches(2.0), Inches(3.7),
+         Inches(1.7), Inches(0.45),
+         "BUSINESS", fill=SKY_BLUE, size=12)
+add_textbox(s, prs.slide_width - Inches(2.1), Inches(4.18),
+            Inches(1.9), Inches(0.65),
+            "Connect & Serve\nCreate Customer Value",
+            size=10, color=GREY_TEXT, align=PP_ALIGN.CENTER)
+add_rect(s, int(cx + R_outer), Inches(3.92),
+         int(prs.slide_width - Inches(2.0) - cx - R_outer),
+         Emu(9000), fill=SKY_BLUE)
+dot2 = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                          int(cx + R_outer - Inches(0.07)),
+                          Inches(3.86),
+                          Inches(0.14), Inches(0.14))
+dot2.fill.solid(); dot2.fill.fore_color.rgb = SKY_BLUE
+dot2.line.fill.background(); dot2.shadow.inherit = False
+
+# ---------- Bottom Global Collaboration Network bar ----------
+bar_top = Inches(6.1)
+bar_h   = Inches(1.15)
+bar_left = Inches(0.4)
+bar_right = prs.slide_width - Inches(0.4)
+bar_w = bar_right - bar_left
+bar = add_rect(s, bar_left, bar_top, bar_w, bar_h, fill=PALE)
+bar.line.color.rgb = LIGHT_BLUE; bar.line.width = Pt(0.75)
+
+add_textbox(s, bar_left, bar_top + Inches(0.05),
+            bar_w, Inches(0.3),
+            "Global Collaboration Network",
+            size=13, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
+
+regions2 = [
+    ("Taiwan (HQ)",            "Project Leadership\n& Coordination",   "TW", RGBColor(0xC8, 0x10, 0x2E)),
+    ("Japan (Site)",           "Advanced Support\n& Service",          "JP", RGBColor(0xBC, 0x00, 0x2D)),
+    ("Germany (Engineering)",  "Engineering Excellence\n& Innovation", "DE", RGBColor(0xFF, 0xCE, 0x00)),
+    ("USA (Support)",          "Technical Support\n& Solutions",       "US", RGBColor(0x3C, 0x3B, 0x6E)),
+    ("China (Manufacturing)",  "Manufacturing Support\n& Execution",   "CN", RGBColor(0xDE, 0x29, 0x10)),
+]
+n2 = len(regions2)
+cell_w = bar_w / n2
+for i, (name, desc, code, color) in enumerate(regions2):
+    cl = bar_left + cell_w * i
+    # small flag-like circle
+    cd = Inches(0.32)
+    circle = s.shapes.add_shape(MSO_SHAPE.OVAL,
+                                int(cl + cell_w / 2 - cd / 2),
+                                bar_top + Inches(0.32),
+                                cd, cd)
+    circle.fill.solid(); circle.fill.fore_color.rgb = color
+    circle.line.color.rgb = WHITE; circle.line.width = Pt(1)
+    circle.shadow.inherit = False
+    tf = circle.text_frame
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = tf.margin_right = Inches(0.0)
+    tf.margin_top = tf.margin_bottom = Inches(0.0)
+    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+    rr = p.add_run(); rr.text = code
+    rr.font.size = Pt(9); rr.font.bold = True; rr.font.color.rgb = WHITE
+    # name
+    add_textbox(s, cl, bar_top + Inches(0.7),
+                cell_w, Inches(0.22),
+                name, size=10, bold=True, color=NAVY,
+                align=PP_ALIGN.CENTER)
+    # role
+    add_textbox(s, cl + Inches(0.05), bar_top + Inches(0.9),
+                cell_w - Inches(0.1), Inches(0.4),
+                desc, size=8, color=GREY_TEXT, align=PP_ALIGN.CENTER)
+
+# Footer copyright (above the bottom navy bar)
+add_textbox(s, 0, prs.slide_height - Inches(0.4),
+            prs.slide_width, Inches(0.2),
+            "© 2026 Eaton. All rights reserved.",
+            size=9, color=GREY_TEXT, align=PP_ALIGN.CENTER)
+
+
 # ------------- Save -----------------------------------------------------
 out = "Functional_Team_Collaboration.pptx"
 prs.save(out)
